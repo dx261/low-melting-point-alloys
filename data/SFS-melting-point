@@ -1,0 +1,7 @@
+SFS 极端随机树 最佳特征子集------->  ('0-norm', '2-norm', 'MagpieData minimum Number', 'MagpieData mean Number',
+'MagpieData minimum MendeleevNumber', 'MagpieData avg_dev MendeleevNumber', 'MagpieData minimum CovalentRadius',
+'MagpieData range Electronegativity', 'MagpieData minimum NsValence', 'MagpieData mean NsValence',
+'MagpieData maximum SpaceGroupNumber', 'compound possible', 'Yang delta', 'Yang omega', 'APE mean', 'Mixing enthalpy',
+'Mean cohesive energy')
+最佳特征子集数量------->  17
+Done in 711.882s

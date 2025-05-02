@@ -1,0 +1,5 @@
+SFS svr 最佳特征子集------->  ('MagpieData minimum MendeleevNumber', 'MagpieData maximum Electronegativity',
+'MagpieData range Electronegativity', 'MagpieData minimum NValence', 'MagpieData minimum GSvolume_pa',
+'MagpieData range SpaceGroupNumber', 'MagpieData mode SpaceGroupNumber', 'compound possible')
+最佳特征子集数量------->  8
+Done in 521.827s
