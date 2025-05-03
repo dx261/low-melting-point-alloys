@@ -1,3 +1,4 @@
+import joblib
 import numpy as np
 import os
 import pandas as pd
@@ -8,7 +9,7 @@ from sklearn.feature_selection import SelectKBest, RFE
 import numpy as np
 from sklearn.svm import SVR
 from sklearn.linear_model import Ridge
-from sklearn.linear_model import Lasso
+from sklearn.linear_model import Lasso, LassoLars
 from sklearn.linear_model import ElasticNet
 from sklearn.linear_model import LinearRegression
 import lightgbm as lgb
@@ -35,13 +36,35 @@ model_dict = {
     "randomforest": RandomForestRegressor(random_state=1),
     "adaboost": AdaBoostRegressor(random_state=1, n_estimators=100, learning_rate=0.1),
     "extratrees": ExtraTreesRegressor(random_state=1),
-    "gradientboost": GradientBoostingRegressor(random_state=1)
+    "gradientboost": GradientBoostingRegressor(random_state=1),
+    "lassolars": LassoLars()
 }
+
+melting_point_best = ['0-norm', '2-norm', 'MagpieData minimum Number', 'MagpieData mean Number',
+                      'MagpieData minimum MendeleevNumber', 'MagpieData avg_dev MendeleevNumber',
+                      'MagpieData minimum CovalentRadius',
+                      'MagpieData range Electronegativity', 'MagpieData minimum NsValence', 'MagpieData mean NsValence',
+                      'MagpieData maximum SpaceGroupNumber', 'compound possible', 'Yang delta', 'Yang omega',
+                      'APE mean', 'Mixing enthalpy',
+                      'Mean cohesive energy']
+enthalpy_best = ['MagpieData minimum MendeleevNumber', 'MagpieData maximum Electronegativity',
+                 'MagpieData range Electronegativity',
+                 'MagpieData minimum NValence', 'MagpieData minimum GSvolume_pa', 'MagpieData range SpaceGroupNumber',
+                 'MagpieData mode SpaceGroupNumber', 'compound possible']
 
 if __name__ == '__main__':
     target = ["melting_point", "enthalpy", "enthalpy-J-cc", "density"]
     i = 0
     model_name = [j for j in model_dict.keys()]
     print(model_name)
-    with open(f'model_{target[i]}_{model_name[10]}.pkl', 'rb') as f:
+    with open(f'models/model_{target[i]}_{model_name[12]}.pkl', 'rb') as f:
         model = pickle.load(f)
+    features = pd.read_csv("data/magpie_virtual_sample.csv")
+    best_feature = [melting_point_best, enthalpy_best, features, features]
+
+    std = joblib.load("standard_scaler.pkl")
+
+    X_std = std.transform(features[best_feature[i]])
+    Y_predict = model.predict(X_std)
+    result = pd.DataFrame({"formula": features["formula"], "predict": Y_predict})
+    result.to_csv(f"data/virtual_samples_result_{target[i]}_{model_name[12]}.csv", index=False)

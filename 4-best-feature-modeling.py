@@ -1,3 +1,4 @@
+import joblib
 import numpy as np
 import os
 import pandas as pd
@@ -8,7 +9,7 @@ from sklearn.feature_selection import SelectKBest, RFE
 import numpy as np
 from sklearn.svm import SVR
 from sklearn.linear_model import Ridge
-from sklearn.linear_model import Lasso
+from sklearn.linear_model import Lasso, LassoLars
 from sklearn.linear_model import ElasticNet
 from sklearn.linear_model import LinearRegression
 import lightgbm as lgb
@@ -50,6 +51,7 @@ if __name__ == '__main__':
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=153)  # 15
     std = StandardScaler()
     X_train_std = std.fit_transform(X_train)
+    joblib.dump(std, "standard_scaler.pkl")  # 保存归一化器
     X_train_std = pd.DataFrame(X_train_std, columns=X_train.columns)
     X_test_std = std.transform(X_test)
     X_test_std = pd.DataFrame(X_test_std, columns=X_test.columns)
@@ -57,19 +59,20 @@ if __name__ == '__main__':
 
     # 筛选后特征建模
     model_dict = {
-        "lgb": lgb.LGBMRegressor(random_state=1),
-        "svr": SVR(C=100, gamma=0.1, kernel="rbf"),
-        "ridge": Ridge(),
-        "lasso": Lasso(),
-        "elasticnet": ElasticNet(),
-        "linear": LinearRegression(),
-        "xgb": XGBRegressor(random_state=1),
-        "bayesian": BayesianRidge(),  # 测试集效果奇差
-        "randomforest": RandomForestRegressor(random_state=1),
-        "adaboost": AdaBoostRegressor(random_state=1, n_estimators=100, learning_rate=0.1),
-        "extratrees": ExtraTreesRegressor(random_state=1),
-        "gradientboost": GradientBoostingRegressor(random_state=1)
-        }
+        # "lgb": lgb.LGBMRegressor(random_state=1),
+        # "svr": SVR(C=100, gamma=0.1, kernel="rbf"),
+        # "ridge": Ridge(),
+        # "lasso": Lasso(),
+        # "elasticnet": ElasticNet(),
+        # "linear": LinearRegression(),
+        # "xgb": XGBRegressor(random_state=1),
+        # "bayesian": BayesianRidge(),  # 测试集效果奇差
+        # "randomforest": RandomForestRegressor(random_state=1),
+        # "adaboost": AdaBoostRegressor(random_state=1, n_estimators=100, learning_rate=0.1),
+        # "extratrees": ExtraTreesRegressor(random_state=1),
+        # "gradientboost": GradientBoostingRegressor(random_state=1)
+        "lassolars": LassoLars()
+    }
     best_score = 0
     best_model = ""
     for model_name, model in model_dict.items():
@@ -93,8 +96,8 @@ if __name__ == '__main__':
         # plt.ylabel("Predict Value")
         # plt.show()
     model = model_dict[best_model].fit(X_train_std, Y_train)
-    # with open(f'models/model_{target[i]}_{best_model}.pkl', 'wb') as f:
-    #     pickle.dump(model, f)
+    with open(f'models/model_{target[i]}_{best_model}.pkl', 'wb') as f:
+        pickle.dump(model, f)
 
     # Y_test_pred = model.predict(X_test_std)
     # Y_train_pred = model.predict(X_train_std)
