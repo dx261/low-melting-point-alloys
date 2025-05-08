@@ -5,72 +5,44 @@ import pandas as pd
 import torch
 from util.deep_learning.VAE.WAE import WAETrainer
 from util.deep_learning.VAE.base import OneDimensionalDataset
-from util.alloys_features import normalize_element_dict, find_elements
+from util.alloys_features import normalize_element_dict, find_elements, formula_to_ratio_dataset
+from util.base_function import get_chemical_formula
 
-def get_chemical_formula(dataset):
-    """
-    Al   Ni   Si
-    0.5  0.5  0
-    :return: get_chemical_formula from element mol weigh dataframe Al0.5Ni0.5
-    """
-    elements_columns = dataset.columns
-    dataset = dataset.reset_index()
-    chemistry_formula = []
-    for i in range(dataset.shape[0]):
-        single_formula = []
-        for col in elements_columns:
-            if (dataset.at[i, col]) > 0:
-                # element
-                single_formula.append(col)
-                # ratio
-                single_formula.append(str(dataset.at[i, col]))
-        chemistry_formula.append("".join(single_formula))
-    return chemistry_formula
-
-def formula_to_ratio_dataset(dataset):
-    """
-    :param dataset: contain the formula column with alloys formula
-    :return:
-    """
-    df_ratio = pd.DataFrame()
-    if not "formula" in list(dataset.columns):
-        raise AssertionError(f"Error: no column named formula is not in the dataset !")
-    for i, formula in enumerate(dataset.formula):
-        element_dict = find_elements(formula)
-        normalized = normalize_element_dict(element_dict)
-        # print(normalized)
-        df_formula = pd.DataFrame(data=normalized, index=[i])
-        df_ratio = pd.concat([df_ratio, df_formula])
-    df_ratio = df_ratio.fillna(0).reset_index(drop=True)
-    dataset_reindex = dataset.reset_index(drop=True)
-    df_all = pd.concat([dataset_reindex, df_ratio], axis=1)
-    element_columns = list(df_ratio.columns)
-    return df_all, element_columns
 
 if __name__ == '__main__':
-    # # 1-高通量方法
-    # # generate virtual space
-    # # 键是元素，值是比例列表
-    # search_range = {"Sn": [i / 100 for i in range(0, 101, 10)],  # 范围0%-100%
-    #                 "Bi": [i / 100 for i in range(0, 101, 10)],  # 范围0%-100%
-    #                 "In": [i / 100 for i in range(0, 101, 10)],  # 范围0%-100%
-    #                 "Ga": [i / 100 for i in range(0, 101, 10)],  # 范围0%-100%
-    #                 "Zn": [i / 100 for i in range(0, 101, 10)],  # 范围0%-100%
-    #                 "Ti": [i / 100 for i in range(0, 101, 10)],  # 范围0%-100%
-    #                 }
-    # uniques = [i for i in search_range.values()]  # 这行代码提取了所有元素的摩尔比例列表，形成一个列表 uniques
-    # all_element_ratios = []
-    # for element_ratio in itertools.product(*uniques):  # 做笛卡尔积：枚举所有元素可能摩尔比例的组合
-    #     if 1 < element_ratio.count(0) < 5:  # 控制每个样本的元素种类在2到4个之间
-    #         all_element_ratios.append(element_ratio)
-    # result = pd.DataFrame(all_element_ratios, columns=list(search_range.keys()))
-    # result.to_csv("./data/virtual_samples_lmp_alloys.csv", index=False)
-    # # 比例式转换为化学式
-    # df = pd.read_csv("./data/virtual_samples_lmp_alloys.csv")
-    # formula = get_chemical_formula(df)
-    # pd.DataFrame(formula).to_csv("./data/virtual_samples_lmp_alloys_formula.csv", index=False)
+    # 1-高通量方法
+    # generate virtual space
+    # 键是元素，值是比例列表
+    # 经尝试元素定为Ga-In-Sn
+    search_range = {"Sn": [i / 100 for i in range(0, 101, 5)],  # 范围0%-100%
+                    # "Bi": [i / 100 for i in range(0, 101, 10)],  # 范围0%-100%
+                    "In": [i / 100 for i in range(0, 101, 5)],  # 范围0%-100%
+                    "Ga": [i / 100 for i in range(0, 101, 5)],  # 范围0%-100%
+                    # "Zn": [i / 100 for i in range(0, 101, 10)],  # 范围0%-100%
+                    # "Ti": [i / 100 for i in range(0, 101, 10)],  # 范围0%-100%
+                    }
+    uniques = [i for i in search_range.values()]  # 这行代码提取了所有元素的摩尔比例列表，形成一个列表 uniques
+    all_element_ratios = []
+    for element_ratio in itertools.product(*uniques):  # 做笛卡尔积：枚举所有元素可能摩尔比例的组合
+        # if 1 < element_ratio.count(0) < 5:  # 控制每个样本的元素种类在2到4个之间
+        if element_ratio.count(0) < 2:
+            all_element_ratios.append(element_ratio)
+    result = pd.DataFrame(all_element_ratios, columns=list(search_range.keys()))
 
-    # # 2-WAE/VAE等根据原数据分布的生成算法
+    Ga_In_Sn = True
+    if Ga_In_Sn:
+        result.to_csv("./data/virtual_samples_lmp_alloys_Ga_In_Sn.csv", index=False)
+    else:
+        result.to_csv("./data/virtual_samples_lmp_alloys.csv", index=False)
+
+    # 比例式转换为化学式
+    df = pd.read_csv("./data/virtual_samples_lmp_alloys_Ga_In_Sn.csv")
+    formula = get_chemical_formula(df)
+    pd.DataFrame(formula, columns=["formula"]).to_csv("./data/virtual_samples_lmp_alloys_formula_Ga_In_Sn.csv", index=False)
+
+
+
+    # # 2-WAE/VAE等根据原数据分布的生成算法（不太行）
     # target = ["melting_point", "enthalpy", "enthalpy-J-cc", "density"]
     # i = 0
     # dataset = pd.read_csv(f"data/{target[i]}.csv")
@@ -91,13 +63,14 @@ if __name__ == '__main__':
     # print("WAE training")
     # trainer = WAETrainer(OneDimensionalDataset(data), input_dim=input_dim)
     # # 训练模型
-    # trainer.train(epochs=200)
+    # trainer.train(epochs=300)
     # print("WAE training finished")
     # print("WAE generation")
     # # 生成样本
+    # num_samples = 50000
     # gen = True
     # if gen:
-    #     generated_samples_scaled = trainer.generate_samples(num_samples=10000).numpy()
+    #     generated_samples_scaled = trainer.generate_samples(num_samples=50000).numpy()
     #     # 反归一化得到生成样本 (成分 + 元素个数）
     #     generated_samples = trainer.data.scaler.inverse_transform(generated_samples_scaled)
     #     df_gen_source = pd.DataFrame(generated_samples_scaled, columns=df_element.columns)
@@ -122,10 +95,11 @@ if __name__ == '__main__':
     #     df_gen = pd.DataFrame(gen, columns=df_element.columns)
     #     # 归一化所有元素和为100
     #     df_gen = df_gen[elements_col].div(df_gen[elements_col].sum(axis=1), axis=0) * 100
+    #     df_gen = df_gen.round(3)
     #     # save
-    #     df_gen.to_csv('data/generated_samples_WAE.csv', index=False)
-
-    # 3-WAE生成的样本合并成化学式
-    df = pd.read_csv("data/generated_samples_WAE.csv")
-    formula = get_chemical_formula(df)
-    pd.DataFrame(formula).to_csv("data/generated_samples_WAE_formula.csv", index=False)
+    #     df_gen.to_csv(f'data/generated_samples_WAE_{num_samples}.csv', index=False)
+    #
+    # # 3-WAE生成的样本合并成化学式
+    # df = pd.read_csv(f'data/generated_samples_WAE_{num_samples}.csv')
+    # formula = get_chemical_formula(df)
+    # pd.DataFrame(formula, columns=["formula"]).to_csv(f"data/generated_samples_WAE_{num_samples}_formula.csv", index=False)

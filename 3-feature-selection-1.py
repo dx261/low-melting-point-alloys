@@ -19,7 +19,7 @@ def pearson_corr_feature_selection(data, threshold=0.9):
 
 if __name__ == '__main__':
     target = ["melting_point", "enthalpy", "enthalpy-J-cc", "density"]
-    i = 2
+    i = 0
     data_path, file_name = "data", f"magpie_{target[i]}.csv"
     file_path = os.path.join(data_path, file_name)
     df = pd.read_csv(file_path)

@@ -39,9 +39,11 @@ if __name__ == '__main__':
     model = ExtraTreesRegressor(random_state=1).fit(X_train_std, Y_train)
     select_feature_all_times, avg_mse = [], []
     tic_fwd = time()
+
     sfs_forward = SFS(model, k_features=len(features), forward=True,
                       cv=10, scoring='neg_mean_squared_error')
     sfs_forward.fit(X_train_std, Y_train)
+
     sfs_results = sfs_forward.subsets_
     for i in range(len(features)):
         select_feature_all_times.append(sfs_results[i + 1]['feature_names'])
@@ -52,6 +54,7 @@ if __name__ == '__main__':
     print(f"Done in {toc_fwd - tic_fwd:.3f}s")
     print('SFS RMSE  ---> ', avg_rmse, '\n特征名  ---> ', select_feature_all_times)
     x = range(1, len(features) + 1)
+
     # alpha 0表示完全透明，1表示完全不透明
     plt.plot(x, avg_rmse, linestyle=':', marker='8', color='#65ab7c', markerfacecolor='#0d75f8',
              markeredgecolor='#0d75f8',

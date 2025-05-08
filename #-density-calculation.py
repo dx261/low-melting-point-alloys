@@ -1,70 +1,123 @@
-# 定义合金元素的摩尔质量 (g/mol) 和密度 (g/cm³)
-element_data = {
-    "Ga": {"M": 69.723, "rho": 5.91},
-    "Sn": {"M": 118.71, "rho": 7.31},
-    "In": {"M": 114.82, "rho": 7.31},
-    "Zn": {"M": 65.38, "rho": 7.14},
-    "Cd": {"M": 112.41, "rho": 8.65},
-    "Bi": {"M": 208.98, "rho": 9.78},
-    "Pb": {"M": 207.2, "rho": 11.34}
+from typing import List, Tuple
+import re
+import pandas as pd
+
+# 密度 (g/cm³)，常温下近似值
+density_data = {
+    "Sn": 7.31,
+    "In": 7.31,
+    "Ga": 5.91,
 }
 
-# 所有合金成分，格式为列表（字典），角标为摩尔比
-alloys = [
-    {"Ga": 86.5, "Sn": 13.5},
-    {"Ga": 100},
-    {"Ga": 96.5, "Zn": 3.5},
-    {"Ga": 82, "Sn": 12, "Zn": 6},
-    {"Ga": 74, "Sn": 22, "Cd": 4},
-    {"Ga": 93, "Zn": 5, "Cd": 2},
-    {"Ga": 86, "Sn": 11, "Zn": 3},
-    {"Ga": 67, "In": 20.5, "Sn": 12.5},
-    {"Ga": 78.55, "In": 21.45},
-    {"Ga": 75.5, "In": 24.5},
-    {"Ga": 78, "In": 22},
-    {"Bi": 49, "In": 51},
-    {"Ga": 68, "In": 20, "Sn": 12},
-    {"Ga": 68.5, "In": 21.5, "Sn": 10},
-    {"Ga": 61, "In": 25, "Sn": 13, "Zn": 1},
-    {"Sn": 100},
-    {"In": 52.2, "Sn": 46, "Zn": 1.8},
-    {"In": 52, "Sn": 48},
-    {"Bi": 32.5, "In": 51, "Sn": 16.5},
-    {"Bi": 32.5, "In": 51, "Sn": 16.5},
-    {"Bi": 33.7, "In": 66.3},
-    {"Bi": 30.8, "In": 61.7, "Cd": 7.5},
-    {"Bi": 31.6, "In": 48.8, "Sn": 19.6},
-    {"In": 51.34, "Sn": 5.56, "Bi": 33.1},
-    {"Sn": 51.2, "Cd": 30.6, "Pb": 18.2},
-    {"Bi": 0.355, "Sn": 0.601, "Zn": 0.044},
-    {"Bi": 54, "In": 29.7, "Sn": 16.3},
-    {"In": 4, "Sn": 40, "Bi": 56},
-    {"Bi": 57, "In": 26, "Sn": 17},
-    {"Bi": 58, "Sn": 42},
-    {"In": 25.2, "Sn": 17.3, "Bi": 57.5},
-    {"Sn": 26, "Bi": 53, "Cd": 21},
-    {"Bi": 67, "In": 33},
-    {"In": 10.5, "Sn": 19, "Bi": 53.5, "Pb": 17},
-    {"Bi": 45, "Pb": 23, "In": 19, "Sn": 8, "Cd": 5},
-    {"In": 21, "Sn": 12, "Bi": 49, "Pb": 18},
-    {"In": 19.1, "Sn": 8.3, "Bi": 44.7, "Cd": 5.3, "Pb": 22.6},
-    {"Sn": 22, "Bi": 50, "Pb": 28},
-    {"Sn": 16, "Bi": 52, "Pb": 32},
-    {"Sn": 13.3, "Bi": 50, "Cd": 10, "Pb": 26.7},
-    {"Bi": 50, "Pb": 26.7, "Sn": 13.3, "Cd": 10},
-    {"Sn": 15.5, "Bi": 52.5, "Pb": 32},
-    {"Bi": 100},
-    {"Bi": 51.6, "Cd": 8.2, "Pb": 40.2},
-    {"Bi": 0.405, "Sn": 0.285, "Pb": 0.163, "In": 0.147}
-]
+# 相对原子质量（g/mol）
+atomic_mass = {
+    "Sn": 118.71,
+    "In": 114.82,
+    "Ga": 69.72,
+}
 
-# 计算密度的函数（质量分数法）
-def compute_density(alloy):
-    total_mass = sum(mol * element_data[el]["M"] for el, mol in alloy.items())
-    mass_fractions = {el: mol * element_data[el]["M"] / total_mass for el, mol in alloy.items()}
-    inverse_density = sum(w / element_data[el]["rho"] for el, w in mass_fractions.items())
-    return round(1 / inverse_density, 3)
 
-# 批量计算所有合金的密度
-densities = [compute_density(alloy) for alloy in alloys]
-print(densities)
+# 提取合金字符串的元素及摩尔比
+def parse_formula(formula: str) -> List[Tuple[str, float]]:
+    matches = re.findall(r'(Sn|In|Ga)(\d*\.?\d+)', formula)
+    return [(elem, float(ratio)) for elem, ratio in matches]
+
+
+# 质量分数法计算合金密度
+def calculate_density(formula: str) -> float:
+    components = parse_formula(formula)
+
+    total_mass = sum(atomic_mass[elem] * ratio for elem, ratio in components)
+
+    mass_fractions = [(elem, (atomic_mass[elem] * ratio) / total_mass) for elem, ratio in components]
+
+    density = sum(mf / density_data[elem] for elem, mf in mass_fractions) ** -1
+
+    return round(density, 4)
+
+
+# 提供的配方列表
+formulas = '''
+Sn0.23In0.46Ga0.31
+Sn0.05In0.68Ga0.27
+In0.71Ga0.29
+Sn0.19Ga0.81
+Sn0.24In0.39Ga0.37
+Sn0.22Ga0.78
+Sn0.22In0.5Ga0.28
+Sn0.24In0.4Ga0.36
+Sn0.26In0.36Ga0.38
+Sn0.23Ga0.77
+Sn0.24In0.38Ga0.38
+Sn0.28In0.21Ga0.51
+Sn0.23In0.47Ga0.3
+Sn0.09In0.65Ga0.26
+Sn0.29In0.2Ga0.51
+Sn0.19In0.53Ga0.28
+Sn0.2In0.52Ga0.28
+Sn0.21Ga0.79
+Sn0.11In0.63Ga0.26
+Sn0.24In0.42Ga0.34
+Sn0.29In0.19Ga0.52
+Sn0.27In0.31Ga0.42
+Sn0.28In0.22Ga0.5
+Sn0.26In0.35Ga0.39
+Sn0.28In0.25Ga0.47
+Sn0.19In0.54Ga0.27
+Sn0.18In0.55Ga0.27
+Sn0.13In0.61Ga0.26
+Sn0.28In0.24Ga0.48
+Sn0.22In0.51Ga0.27
+Sn0.23In0.48Ga0.29
+Sn0.04In0.7Ga0.26
+Sn0.16In0.58Ga0.26
+Sn0.15In0.59Ga0.26
+Sn0.24In0.47Ga0.29
+Sn0.25In0.38Ga0.37
+Sn0.25In0.39Ga0.36
+Sn0.21In0.52Ga0.27
+Sn0.2In0.53Ga0.27
+Sn0.27In0.29Ga0.44
+Sn0.27In0.3Ga0.43
+Sn0.29In0.12Ga0.59
+Sn0.3In0.13Ga0.57
+Sn0.3In0.12Ga0.58
+In0.72Ga0.28
+Sn0.27In0.33Ga0.4
+Sn0.28In0.26Ga0.46
+Sn0.07In0.67Ga0.26
+Sn0.29In0.18Ga0.53
+Sn0.29In0.21Ga0.5
+Sn0.3In0.15Ga0.55
+Sn0.29In0.15Ga0.56
+Sn0.29In0.25Ga0.46
+Sn0.26In0.38Ga0.36
+Sn0.3In0.16Ga0.54
+Sn0.28In0.28Ga0.44
+Sn0.25In0.4Ga0.35
+Sn0.23In0.49Ga0.28
+Sn0.26In0.37Ga0.37
+Sn0.17In0.57Ga0.26
+Sn0.18In0.56Ga0.26
+Sn0.3In0.11Ga0.59
+Sn0.24Ga0.76
+Sn0.25In0.41Ga0.34
+Sn0.28In0.23Ga0.49
+Sn0.29In0.24Ga0.47
+In0.73Ga0.27
+Sn0.29In0.1Ga0.61
+Sn0.29In0.26Ga0.45
+Sn0.27In0.08Ga0.65
+Sn0.28In0.08Ga0.64
+Sn0.3In0.19Ga0.51
+Sn0.21In0.53Ga0.26
+Sn0.29In0.23Ga0.48
+Sn0.22In0.52Ga0.26
+Sn0.3In0.17Ga0.53
+'''.strip().splitlines()  # 按行分割字符串
+
+# 批量计算密度
+density_results = [(f, calculate_density(f)) for f in formulas]
+df = pd.DataFrame(density_results, columns=["Formula", "Density (g/cm3)"])
+df.head(10)  # 显示前10行结果作为示例
+df.to_csv("data/virtual_sample_density_results.csv", index=False)
